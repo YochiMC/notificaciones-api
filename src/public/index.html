@@ -2,122 +2,264 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Tareas y Notificaciones</title>
     <style>
-        /* Reset basic styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f0f2f5;
+            background: #f4f4f4;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            padding: 20px;
         }
 
         .container {
             background: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
             width: 100%;
-            max-width: 500px;
-            text-align: center;
+            margin-top: 20px;
         }
 
-        h1 {
+        h1,
+        h2 {
             color: #4CAF50;
-            margin-bottom: 20px;
-            font-size: 2rem;
-            font-weight: bold;
+            margin-bottom: 15px;
         }
 
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .hidden {
+            display: none;
         }
 
-        input[type="text"] {
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
             padding: 10px;
-            font-size: 1rem;
-            border: 2px solid #ddd;
+            margin-top: 5px;
             border-radius: 5px;
-            transition: border-color 0.3s;
-        }
-
-        input[type="text"]:focus {
-            border-color: #4CAF50;
-            outline: none;
+            border: 1px solid #ccc;
         }
 
         button {
+            margin-top: 15px;
             padding: 10px;
-            font-size: 1rem;
-            background-color: #4CAF50;
+            background: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
         }
 
         button:hover {
             background-color: #45a049;
         }
 
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            text-align: left;
+        .task {
+            background: #eee;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
         }
 
-        label {
-            font-size: 0.9rem;
-            color: #333;
-            font-weight: bold;
+        .task button {
+            margin-left: 5px;
         }
 
-        .footer {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .footer a {
-            color: #4CAF50;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
+        .notification {
+            background: #e0f7fa;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Enviar Notificación</h1>
-        <form action="/nueva-notificacion" method="POST">
-            <div class="input-group">
-                <label for="docente">Nombre del Docente</label>
-                <input type="text" id="docente" name="docente" placeholder="Ingrese el nombre del docente" required>
-            </div>
-            <div class="input-group">
-                <label for="mensaje">Mensaje</label>
-                <input type="text" id="mensaje" name="mensaje" placeholder="Escriba el mensaje aquí" required>
-            </div>
-            <button type="submit">Enviar</button>
-        </form>
+    <h1>Gestión de Tareas y Notificaciones</h1>
+
+    <select id="roleSelect">
+        <option value="">Selecciona tu rol</option>
+        <option value="profesor">Profesor</option>
+        <option value="alumno">Alumno</option>
+    </select>
+
+    <!-- Panel Profesor -->
+    <div class="container hidden" id="profesorPanel">
+        <h2>Crear/Editar Tarea</h2>
+        <input type="text" id="materia" placeholder="Nombre de la materia" />
+        <textarea id="detalle" placeholder="Detalles de la tarea"></textarea>
+        <button id="guardarTareaBtn">Guardar tarea</button>
+
+        <h2>Tareas Existentes</h2>
+        <div id="tareasProfesor"></div>
+
+        <h2>Enviar Notificación</h2>
+        <input type="text" id="docente" placeholder="Nombre del docente" />
+        <textarea id="mensaje" placeholder="Escribe el mensaje aquí"></textarea>
+        <button id="enviarNotificacionBtn">Enviar Notificación</button>
+
+        <h2>Notificaciones Enviadas</h2>
+        <div id="notificacionesProfesor"></div>
     </div>
+
+    <!-- Panel Alumno -->
+    <div class="container hidden" id="alumnoPanel">
+        <h2>Tareas Disponibles</h2>
+        <div id="tareasAlumno"></div>
+
+        <h2>Notificaciones Recibidas</h2>
+        <div id="notificacionesAlumno"></div>
+    </div>
+    <script>
+        const roleSelect = document.getElementById('roleSelect');
+        const profesorPanel = document.getElementById('profesorPanel');
+        const alumnoPanel = document.getElementById('alumnoPanel');
+        const guardarTareaBtn = document.getElementById('guardarTareaBtn');
+        const enviarNotificacionBtn = document.getElementById('enviarNotificacionBtn');
+
+        let editarId = null;
+
+        roleSelect.addEventListener('change', () => {
+            const rol = roleSelect.value;
+            profesorPanel.classList.toggle('hidden', rol !== 'profesor');
+            alumnoPanel.classList.toggle('hidden', rol !== 'alumno');
+            if (rol === 'profesor') {
+                cargarTareas('profesor');
+                cargarNotificaciones('profesor');
+            } else if (rol === 'alumno') {
+                cargarTareas('alumno');
+                cargarNotificaciones('alumno');
+            }
+        });
+
+        async function cargarTareas(rol) {
+            try {
+                const res = await fetch('/tareas');
+                const tareas = await res.json();
+                const container = document.getElementById(rol === 'profesor' ? 'tareasProfesor' : 'tareasAlumno');
+                container.innerHTML = '';
+                tareas.forEach(t => {
+                    const tareaDiv = document.createElement('div');
+                    tareaDiv.className = 'task';
+                    tareaDiv.innerHTML = `
+                        <strong>${t.materia}</strong><br>
+                        ${t.detalle}
+                        ${rol === 'profesor' ? `
+                            <button onclick="editarTarea('${t.id}', '${t.materia}', \`${t.detalle}\`)">Editar</button>
+                            <button onclick="eliminarTarea('${t.id}')">Eliminar</button>
+                        ` : ''}
+                    `;
+                    container.appendChild(tareaDiv);
+                });
+            } catch (err) {
+                console.error('Error al cargar tareas:', err);
+            }
+        }
+
+        async function cargarNotificaciones(rol) {
+            try {
+                const res = await fetch('/notificaciones');
+                const notificaciones = await res.json();
+                const container = document.getElementById(rol === 'profesor' ? 'notificacionesProfesor' : 'notificacionesAlumno');
+                container.innerHTML = '';
+
+                notificaciones.forEach(n => {
+                    const notiDiv = document.createElement('div');
+                    notiDiv.className = 'notification';
+                    notiDiv.style.backgroundColor = n.nueva ? '#f9f9f9' : '#d4edda'; // gris claro = nueva, verde = completada
+
+                    let contenido = `
+                <strong>${n.docente}</strong><br>
+                ${n.mensaje}<br>
+                <small>${new Date(n.fecha).toLocaleString()}</small>
+            `;
+
+                    // Agregar botón solo si es alumno y la notificación está "nueva"
+                    if (rol === 'alumno' && n.nueva) {
+                        contenido += `<br><button onclick="marcarComoCompletada('${n.id}')">Marcar como completada</button>`;
+                    }
+
+                    notiDiv.innerHTML = contenido;
+                    container.appendChild(notiDiv);
+                });
+            } catch (err) {
+                console.error('Error al cargar notificaciones:', err);
+            }
+        }
+
+
+
+        guardarTareaBtn.onclick = async () => {
+            const materia = document.getElementById('materia').value;
+            const detalle = document.getElementById('detalle').value;
+
+            const metodo = editarId ? 'PUT' : 'POST';
+            const url = editarId ? `/tareas/${editarId}` : '/tareas';
+
+            await fetch(url, {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ materia, detalle })
+            });
+
+            editarId = null;
+            document.getElementById('materia').value = '';
+            document.getElementById('detalle').value = '';
+            cargarTareas('profesor');
+        };
+
+        enviarNotificacionBtn.onclick = async () => {
+            const docente = document.getElementById('docente').value;
+            const mensaje = document.getElementById('mensaje').value;
+
+            await fetch('/nueva-notificacion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ docente, mensaje })
+            });
+
+            document.getElementById('docente').value = '';
+            document.getElementById('mensaje').value = '';
+            cargarNotificaciones('profesor');
+        };
+
+        async function eliminarTarea(id) {
+            await fetch(`/tareas/${id}`, { method: 'DELETE' });
+            cargarTareas('profesor');
+        }
+
+        function editarTarea(id, materia, detalle) {
+            document.getElementById('materia').value = materia;
+            document.getElementById('detalle').value = detalle;
+            editarId = id;
+        }
+        async function marcarComoCompletada(id) {
+            try {
+                const res = await fetch(`/notificaciones/${id}/nueva`, {
+                    method: 'PATCH',
+                });
+
+                if (!res.ok) {
+                    throw new Error('No se pudo marcar como completada.');
+                }
+
+                // Recargar las notificaciones del alumno para reflejar el cambio
+                cargarNotificaciones('alumno');
+            } catch (err) {
+                console.error('Error al marcar como completada:', err);
+            }
+        }
+    </script>
 </body>
 
 </html>
