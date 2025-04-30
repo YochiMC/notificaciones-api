@@ -15,6 +15,20 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  # Ajusta la versión de Node.js si es necesario
+
+      - name: Install dependencies
+        run: |
+          npm install  # Asegúrate de tener un package.json con las dependencias necesarias
+
+      - name: Run tests
+        run: |
+          npm test  # Esto ejecuta las pruebas de tu proyecto, usa el comando adecuado si es diferente
+        continue-on-error: false  # Detiene el flujo si las pruebas fallan
+
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -48,14 +62,14 @@ jobs:
           location: 'East US'
           ports: '3000'
           restart-policy: OnFailure
-      
+
       - name: Login to Docker hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: push to Docker Hub
         run: |
-          docker tag ${{ secrets.ACR_LOGIN_SERVER }}/notificaciones:latest ${{ secrets.DOCKERHUB_USERNAME }}/notificaciones:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/notificaciones:latest
+          docker tag ${{ secrets.ACR_LOGIN_SERVER }}/notificaciones:latest ${{ secrets.DOCKER_USERNAME }}/notificaciones:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/notificaciones:latest
