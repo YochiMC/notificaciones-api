@@ -36,7 +36,7 @@ jobs:
       - name: Deploy to Azure Container Instances
         uses: Azure/aci-deploy@v1
         with:
-          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}         # Nombre del grupo de recursos
+          resource-group: topicos-notificaciones         # Nombre del grupo de recursos
           dns-name-label: notificaciones-api-${{ github.run_id }}    # Nombre DNS único para el contenedor
           image: hugocerrillo/notificaciones:latest                  # Nombre de la imagen Docker
           registry-login-server: docker.io                           # Registro de Docker Hub
