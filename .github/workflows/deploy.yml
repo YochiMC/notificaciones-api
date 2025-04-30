@@ -28,7 +28,11 @@ jobs:
       - name: Publish website image
         run: |
           docker push hugocerrillo/notificaciones:latest
-
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
       - name: Deploy to Azure Container Instances
         uses: Azure/aci-deploy@v1
         with:
