@@ -15,33 +15,35 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build website image
-        run: |
-          docker build -t hugocerrillo/notificaciones:latest -f Dockerfile .
-
-      - name: Publish website image
-        run: |
-          docker push hugocerrillo/notificaciones:latest
       - name: Login to Azure
         uses: azure/login@v1
         with:
-            creds: ${{ secrets.AZURE_CREDENTIALS }}
-        
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/notificaciones:latest -f Dockerfile .
+
+      - name: Login to ACR
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Push image to ACR
+        run: |
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/notificaciones:latest
+
       - name: Deploy to Azure Container Instances
         uses: Azure/aci-deploy@v1
         with:
           resource-group: topicos-notificaciones
           dns-name-label: recordatorioschida-${{ github.run_id }}
-          image: hugocerrillo/notificaciones:latest
-          registry-login-server: docker.io
-          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+          image: ${{ secrets.ACR_LOGIN_SERVER }}/notificaciones:latest
+          registry-login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          registry-username: ${{ secrets.ACR_USERNAME }}
+          registry-password: ${{ secrets.ACR_PASSWORD }}
           name: recordatorioschida
           location: 'East US'
           ports: '3000'
