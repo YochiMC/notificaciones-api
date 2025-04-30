@@ -12,35 +12,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps: 
-      # Paso 1: Verifica el repositorio
       - name: Check out the repo
         uses: actions/checkout@v3
 
-      # Paso 2: Inicia sesión en Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Paso 3: Construye y sube la imagen Docker
       - name: Build website image
         run: |
-          docker build --platform linux --tag hugocerrillo/notificaciones:latest -f src/Dockerfile .
-      
+          docker build -t hugocerrillo/notificaciones:latest -f src/Dockerfile .
+
       - name: Publish website image
         run: |
           docker push hugocerrillo/notificaciones:latest
 
-      # Paso 4: Desplegar en Azure Container Instances
       - name: Deploy to Azure Container Instances
         uses: Azure/aci-deploy@v1
         with:
-          resource-group: topicos-notificaciones         # Nombre del grupo de recursos
-          dns-name-label: notificaciones-api-${{ github.run_id }}    # Nombre DNS único para el contenedor
-          image: hugocerrillo/notificaciones:latest                  # Nombre de la imagen Docker
-          registry-login-server: docker.io                           # Registro de Docker Hub
-          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}       # Usuario de Docker Hub
-          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}          # Token de Docker Hub
-          name: notificaciones-api                                   # Nombre del contenedor
-          location: 'East US'                                        # Región de Azure donde se va a desplegar
+          resource-group: topicos-notificaciones
+          dns-name-label: notificacionesapi-${{ github.run_id }}
+          image: hugocerrillo/notificaciones:latest
+          registry-login-server: docker.io
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
+          name: notificaciones-api
+          location: 'East US'
+          ports: '3000'
+          restart-policy: OnFailure
