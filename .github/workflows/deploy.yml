@@ -37,12 +37,12 @@ jobs:
         uses: Azure/aci-deploy@v1
         with:
           resource-group: topicos-notificaciones
-          dns-name-label: notificacionesapi-${{ github.run_id }}
+          dns-name-label: recordatorioschida-${{ github.run_id }}
           image: hugocerrillo/notificaciones:latest
           registry-login-server: docker.io
           registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
           registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
-          name: notificaciones-api
+          name: recordatorioschida
           location: 'East US'
           ports: '3000'
           restart-policy: OnFailure
