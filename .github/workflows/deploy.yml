@@ -23,7 +23,7 @@ jobs:
 
       - name: Build website image
         run: |
-          docker build -t hugocerrillo/notificaciones:latest -f src/Dockerfile .
+          docker build -t hugocerrillo/notificaciones:latest -f Dockerfile .
 
       - name: Publish website image
         run: |
