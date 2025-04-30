@@ -1,0 +1,30 @@
+name: Doker website CI
+on:
+  push: 
+    branches: ['api-implementation']
+    paths:
+      - 'src/**'
+jobs:
+    deploy:
+      name: Docker build
+      runs-on: ubuntu-latest
+      steps: 
+        - name: Check out the repo
+          uses: actions/checkout@v3
+        - name: Login to Docker Hub
+          uses: docker/login-action@v2
+          with:
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+        - name: Build website image
+          run: |
+            docker build --platform linux --tag hugocerrillo/notificaciones:latest -f src/Dockerfile .
+        - name: Publish website image
+          run: |
+            docker push hugocerrillo/notificaciones:latest
+        - name: App service auth
+          uses: azure/webapp-deploy@v2
+          with:
+            app-name: 'recordatorioschida'
+            publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+            images: 'hugocerrillo/notificaciones:latest'
