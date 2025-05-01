@@ -24,6 +24,7 @@ jobs:
         run: |
           npm install  # Asegúrate de tener un package.json con las dependencias necesarias
           npm install -g jest  # Instalar Jest globalmente
+          npm install firebase-admin
 
       #- name: Run tests
       #  run: |
