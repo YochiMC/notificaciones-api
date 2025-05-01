@@ -7,7 +7,7 @@ const admin = require('firebase-admin');
 const { getFirestore } = require('firebase-admin/firestore');
 
 // Obtiene la ruta desde la variable de entorno o usa un valor por defecto
-const firebaseKeyPath = process.env.FIREBASE_KEY_PATH || 'notificaciones-f6934-firebase-adminsdk-fbsvc-e1613be407.json';
+const firebaseKeyPath = process.env.FIREBASE_KEY_PATH || 'notificaciones-f6934-firebase-adminsdk-fbsvc-a63f7b483d.json';
 
 // Construye la ruta absoluta al archivo JSON desde la raíz del proyecto
 const serviceAccountPath = path.resolve(__dirname, firebaseKeyPath);
