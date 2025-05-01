@@ -22,14 +22,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install  # Asegúrate de tener un package.json con las dependencias necesarias          
+          npm install  # Asegúrate de tener un package.json con las dependencias necesarias  
+          npm install -g jest  # Instalar Jest globalmente        
         #  npm install firebase-admin
-        #  npm install -g jest  # Instalar Jest globalmente
+        
 
-      #- name: Run tests
-      #  run: |
-      #    npm test  # Esto ejecuta las pruebas de tu proyecto, usa el comando adecuado si es diferente
-      #  continue-on-error: false  # Detiene el flujo si las pruebas fallan
+      - name: Run tests
+        run: |
+          npm test  # Esto ejecuta las pruebas de tu proyecto, usa el comando adecuado si es diferente
+        continue-on-error: false  # Detiene el flujo si las pruebas fallan
 
       - name: Login to Azure
         uses: azure/login@v1
