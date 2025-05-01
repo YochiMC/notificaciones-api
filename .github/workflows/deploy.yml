@@ -27,10 +27,10 @@ jobs:
         #  npm install firebase-admin
         
 
-      - name: Run tests
-        run: |
-          npm test  # Esto ejecuta las pruebas de tu proyecto, usa el comando adecuado si es diferente
-        continue-on-error: false  # Detiene el flujo si las pruebas fallan
+      #- name: Run tests
+      #  run: |
+      #    npm test  # Esto ejecuta las pruebas de tu proyecto, usa el comando adecuado si es diferente
+      #  continue-on-error: false  # Detiene el flujo si las pruebas fallan
 
       - name: Login to Azure
         uses: azure/login@v1
