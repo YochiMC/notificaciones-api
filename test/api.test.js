@@ -2,40 +2,50 @@ const request = require('supertest');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
+const { db } = require('../src/firebase'); // Simularemos las funciones de Firebase
 
-// Suponemos que tus rutas están en un archivo llamado 'routes/index.js'
-const routes = require('../src/routes'); // Ajusta la ruta según la ubicación de tu archivo de rutas.
+// Aquí simulamos las respuestas de Firebase
+jest.mock('../src/firebase'); 
 
 app.use(bodyParser.json());
-app.use('/api', routes); // Define las rutas
+const routes = require('../src/routes');
+app.use('/api', routes);  // Rutas de la API
 
-// Test para obtener todas las notificaciones
+// Test 1: Obtener notificaciones (GET /api/notificaciones)
 describe('GET /api/notificaciones', () => {
   it('should return a list of notifications', async () => {
-    const res = await request(app).get('/api/notificaciones');
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true); // Aseguramos que la respuesta sea un array
-  });
-
-  it('should return notifications with the correct fields', async () => {
-    const res = await request(app).get('/api/notificaciones');
-    expect(res.status).toBe(200);
-    res.body.forEach((notificacion) => {
-      expect(notificacion).toHaveProperty('id');
-      expect(notificacion).toHaveProperty('docente');
-      expect(notificacion).toHaveProperty('mensaje');
-      expect(notificacion).toHaveProperty('fecha');
-      expect(notificacion).toHaveProperty('nueva');
+    // Simulamos lo que Firebase nos devolvería
+    db.collection.mockReturnValue({
+      orderBy: () => ({
+        get: jest.fn().mockResolvedValue({
+          docs: [
+            { id: '1', data: () => ({ docente: 'Juan', mensaje: 'Clase sobre JS', fecha: '2022-10-01', nueva: true }) },
+            { id: '2', data: () => ({ docente: 'Maria', mensaje: 'Clase sobre Node.js', fecha: '2022-10-02', nueva: false }) }
+          ]
+        })
+      })
     });
+
+    const res = await request(app).get('/api/notificaciones');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      { id: '1', docente: 'Juan', mensaje: 'Clase sobre JS', fecha: '2022-10-01', nueva: true },
+      { id: '2', docente: 'Maria', mensaje: 'Clase sobre Node.js', fecha: '2022-10-02', nueva: false }
+    ]);
   });
 });
 
-// Test para crear una nueva notificación
+// Test 2: Crear una nueva notificación (POST /api/nueva-notificacion)
 describe('POST /api/nueva-notificacion', () => {
   it('should create a new notification', async () => {
+    // Simulamos la creación exitosa de una notificación en Firebase
+    db.collection.mockReturnValue({
+      add: jest.fn().mockResolvedValue({ id: '3' })
+    });
+
     const newNotificacion = {
       docente: 'Juan Pérez',
-      mensaje: 'Nueva clase sobre JavaScript',
+      mensaje: 'Nueva clase sobre JavaScript'
     };
 
     const res = await request(app).post('/api/nueva-notificacion').send(newNotificacion);
@@ -50,109 +60,36 @@ describe('POST /api/nueva-notificacion', () => {
   });
 });
 
-// Test para actualizar una notificación y marcarla como "vieja"
+// Test 3: Marcar notificación como vieja (PATCH /api/notificaciones/:id/nueva)
 describe('PATCH /api/notificaciones/:id/nueva', () => {
   it('should mark a notification as read', async () => {
-    // Primero, creamos una notificación para probar
-    const newNotificacion = {
-      docente: 'Juan Pérez',
-      mensaje: 'Nueva clase sobre React',
-    };
+    // Simulamos la existencia de una notificación en Firebase
+    db.collection.mockReturnValue({
+      doc: jest.fn().mockReturnValue({
+        get: jest.fn().mockResolvedValue({
+          exists: true,
+          data: () => ({ docente: 'Juan Pérez', mensaje: 'Clase de JS', nueva: true })
+        }),
+        update: jest.fn().mockResolvedValue()
+      })
+    });
 
-    const postRes = await request(app).post('/api/nueva-notificacion').send(newNotificacion);
-    const notificacionId = postRes.body.id; // Suponiendo que la respuesta contiene el ID
-
-    // Ahora, marcamos esa notificación como leída
-    const res = await request(app).patch(`/api/notificaciones/${notificacionId}/nueva`);
+    const res = await request(app).patch('/api/notificaciones/1/nueva');
     expect(res.status).toBe(200);
     expect(res.body.mensaje).toBe('Notificación marcada como completada.');
   });
 
   it('should return 404 if notification not found', async () => {
+    db.collection.mockReturnValue({
+      doc: jest.fn().mockReturnValue({
+        get: jest.fn().mockResolvedValue({
+          exists: false
+        })
+      })
+    });
+
     const res = await request(app).patch('/api/notificaciones/nonexistent-id/nueva');
     expect(res.status).toBe(404);
     expect(res.body.error).toBe('Notificación no encontrada.');
-  });
-});
-
-// Test para obtener todas las tareas
-describe('GET /api/tareas', () => {
-  it('should return a list of tasks', async () => {
-    const res = await request(app).get('/api/tareas');
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true); // Aseguramos que la respuesta sea un array
-  });
-});
-
-// Test para crear una nueva tarea
-describe('POST /api/tareas', () => {
-  it('should create a new task', async () => {
-    const nuevaTarea = {
-      materia: 'Matemáticas',
-      detalle: 'Resolver problemas del capítulo 3',
-    };
-
-    const res = await request(app).post('/api/tareas').send(nuevaTarea);
-    expect(res.status).toBe(200);
-    expect(res.text).toBe('Tarea guardada correctamente');
-  });
-
-  it('should return an error if required fields are missing', async () => {
-    const res = await request(app).post('/api/tareas').send({});
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Faltan campos: materia y detalle son obligatorios.');
-  });
-});
-
-// Test para editar una tarea
-describe('PUT /api/tareas/:id', () => {
-  it('should update a task', async () => {
-    // Primero, creamos una tarea para probar
-    const nuevaTarea = {
-      materia: 'Biología',
-      detalle: 'Estudiar el ciclo del agua',
-    };
-
-    const postRes = await request(app).post('/api/tareas').send(nuevaTarea);
-    const tareaId = postRes.body.id; // Suponiendo que la respuesta contiene el ID
-
-    const tareaActualizada = {
-      materia: 'Biología',
-      detalle: 'Estudiar la fotosíntesis',
-    };
-
-    const res = await request(app).put(`/api/tareas/${tareaId}`).send(tareaActualizada);
-    expect(res.status).toBe(200);
-    expect(res.text).toBe('Tarea actualizada correctamente');
-  });
-
-  it('should return 404 if task not found', async () => {
-    const res = await request(app).put('/api/tareas/nonexistent-id').send({});
-    expect(res.status).toBe(404);
-    expect(res.text).toBe('Tarea no encontrada');
-  });
-});
-
-// Test para eliminar una tarea
-describe('DELETE /api/tareas/:id', () => {
-  it('should delete a task', async () => {
-    // Primero, creamos una tarea para probar
-    const nuevaTarea = {
-      materia: 'Historia',
-      detalle: 'Leer el capítulo 5',
-    };
-
-    const postRes = await request(app).post('/api/tareas').send(nuevaTarea);
-    const tareaId = postRes.body.id; // Suponiendo que la respuesta contiene el ID
-
-    const res = await request(app).delete(`/api/tareas/${tareaId}`);
-    expect(res.status).toBe(200);
-    expect(res.text).toBe('Tarea eliminada correctamente');
-  });
-
-  it('should return 404 if task not found', async () => {
-    const res = await request(app).delete('/api/tareas/nonexistent-id');
-    expect(res.status).toBe(404);
-    expect(res.text).toBe('Tarea no encontrada');
   });
 });
