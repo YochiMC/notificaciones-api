@@ -7,4 +7,4 @@ hugocerrillo/notificaciones
 
 esta es la imagen de dockerhub para que corrobore que si se subio una nueva versión...
 
-Tenemos varias ramas pero revise en la rama "api-chida" por favor :)
+Tenemos varias ramas en nuestro repositorio, pero revise en la rama "api-chida" por favor :)
